@@ -24,8 +24,14 @@ export function generateRecurringInstances(
   rangeEnd: Date
 ): ChoreInstance[] {
   const instances: ChoreInstance[] = [];
-  const choreStartDate = parseISO(chore.startDate);
+
+  // Handle missing dates - fallback to endDate for startDate if not present
+  if (!chore.endDate) {
+    return instances; // Can't generate instances without at least an end date
+  }
+
   const choreEndDate = parseISO(chore.endDate);
+  const choreStartDate = chore.startDate ? parseISO(chore.startDate) : choreEndDate;
 
   // If no recurrence or recurrence is 'none', show on the end date (due date)
   if (!chore.recurrence || chore.recurrence.type === RECURRENCE_TYPES.NONE) {
