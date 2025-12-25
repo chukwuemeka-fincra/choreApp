@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 type SetValue<T> = (value: T | ((prev: T) => T)) => void;
 
@@ -17,16 +17,36 @@ export function useLocalStorage<T>(
     }
   });
 
-  // Update localStorage when state changes
+  // BroadcastChannel for cross-tab sync
+  const channelRef = useRef<BroadcastChannel | null>(null);
+
+  // Initialize BroadcastChannel
+  useEffect(() => {
+    // Create channel for this storage key
+    channelRef.current = new BroadcastChannel(`localStorage_${key}`);
+
+    // Listen for messages from other tabs
+    channelRef.current.onmessage = (event: MessageEvent<T>) => {
+      setStoredValue(event.data);
+    };
+
+    return () => {
+      channelRef.current?.close();
+    };
+  }, [key]);
+
+  // Update localStorage and broadcast when state changes
   useEffect(() => {
     try {
       window.localStorage.setItem(key, JSON.stringify(storedValue));
+      // Broadcast to other tabs
+      channelRef.current?.postMessage(storedValue);
     } catch (error) {
       console.error(`Error setting localStorage key "${key}":`, error);
     }
   }, [key, storedValue]);
 
-  // Listen for changes in other tabs/windows
+  // Listen for changes in other tabs/windows (fallback for non-BroadcastChannel scenarios)
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === key && event.newValue !== null) {

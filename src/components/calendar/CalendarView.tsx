@@ -50,6 +50,7 @@ export function CalendarView({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [choreToDelete, setChoreToDelete] = useState<Chore | null>(null);
 
   // Convert chores to calendar events
@@ -108,10 +109,18 @@ export function CalendarView({
     setIsFormOpen(true);
   }, []);
 
-  // Handle clicking on a slot (empty day)
+  // Handle clicking on a slot (empty day/time)
   const handleSelectSlot = useCallback(({ start }: SlotInfo) => {
     setEditingChore(null);
     setSelectedDate(toDateString(start));
+    // Extract time if not midnight (indicates a time slot was clicked in week/day view)
+    const hours = start.getHours();
+    const minutes = start.getMinutes();
+    if (hours !== 0 || minutes !== 0) {
+      setSelectedTime(format(start, 'HH:mm'));
+    } else {
+      setSelectedTime(null);
+    }
     setIsFormOpen(true);
   }, []);
 
@@ -138,20 +147,31 @@ export function CalendarView({
     }
   };
 
+  // Format time from "HH:mm" to "h:mm a" (e.g., "14:30" -> "2:30 PM")
+  const formatTime = (time: string | null): string | null => {
+    if (!time) return null;
+    const parsed = parse(time, 'HH:mm', new Date());
+    return format(parsed, 'h:mm a');
+  };
+
   // Custom event component
-  const EventComponent = ({ event }: EventComponentProps) => (
-    <div className="calendar-event">
-      <span className="calendar-event-title">{event.title}</span>
-      {event.assignee && (
-        <span
-          className="calendar-event-avatar"
-          style={{ backgroundColor: event.assignee.color }}
-        >
-          {event.assignee.avatar}
-        </span>
-      )}
-    </div>
-  );
+  const EventComponent = ({ event }: EventComponentProps) => {
+    const timeDisplay = formatTime(event.chore.dueTime);
+    return (
+      <div className="calendar-event">
+        {timeDisplay && <span className="calendar-event-time">{timeDisplay}</span>}
+        <span className="calendar-event-title">{event.title}</span>
+        {event.assignee && (
+          <span
+            className="calendar-event-avatar"
+            style={{ backgroundColor: event.assignee.color }}
+          >
+            {event.assignee.avatar}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="calendar-container">
@@ -181,6 +201,8 @@ export function CalendarView({
         onDelete={handleFormDelete}
         chore={editingChore}
         memberOptions={memberOptions}
+        initialDate={selectedDate}
+        initialTime={selectedTime}
       />
 
       <ConfirmDialog
