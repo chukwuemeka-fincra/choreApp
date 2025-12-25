@@ -142,6 +142,13 @@
   width: 100%;
 }
 
+.calendar-event-time {
+  font-size: 10px;
+  opacity: 0.85;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
 .calendar-event-title {
   flex: 1;
   overflow: hidden;

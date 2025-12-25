@@ -19,6 +19,8 @@ interface ChoreFormProps {
   onDelete?: (chore: Chore) => void;
   chore?: Chore | null;
   memberOptions?: SelectOption[];
+  initialDate?: string | null;
+  initialTime?: string | null;
 }
 
 interface FormState {
@@ -45,6 +47,8 @@ export function ChoreForm({
   onDelete,
   chore = null,
   memberOptions = [],
+  initialDate = null,
+  initialTime = null,
 }: ChoreFormProps) {
   const [formData, setFormData] = useState<FormState>({
     title: '',
@@ -73,12 +77,13 @@ export function ChoreForm({
           color: chore.color,
         });
       } else {
+        const dateToUse = initialDate || getCurrentDateString();
         setFormData({
           title: '',
           description: '',
-          startDate: getCurrentDateString(),
-          endDate: getCurrentDateString(),
-          dueTime: '',
+          startDate: dateToUse,
+          endDate: dateToUse,
+          dueTime: initialTime || '',
           assigneeId: '',
           recurrenceType: RECURRENCE_TYPES.NONE,
           color: CHORE_COLORS[0],
@@ -86,7 +91,7 @@ export function ChoreForm({
       }
       setErrors({});
     }
-  }, [isOpen, chore]);
+  }, [isOpen, chore, initialDate, initialTime]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
